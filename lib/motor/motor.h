@@ -35,6 +35,6 @@ public:
     void ISREncoder();
     void ReadRPM();
 };
-extern Motor MotorA, MotorB, MotorC, MotorD;
+extern Motor MotorFL, MotorFR, MotorB;
 
 void updateAllRPM(); // ฟังก์ชันที่จะเอาไปผูกกับ IntervalTimer

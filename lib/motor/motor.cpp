@@ -1,7 +1,7 @@
 #include "robot.h"
 
-// สร้าง Object ของมอเตอร์ทั้ง 4 ตัว
-Motor MotorA, MotorB, MotorC, MotorD;
+// สร้าง Object ของมอเตอร์ทั้ง 3 ตัว (หน้าซ้าย, หน้าขวา, หลัง)
+Motor MotorFL, MotorFR, MotorB;
 
 // ฟังก์ชันตั้งค่าขาและสั่ง pinMode
 void Motor::setPin(uint8_t inA, uint8_t inB, uint8_t pwm, uint8_t encA, uint8_t encB, uint16_t motorPPR)
@@ -95,8 +95,7 @@ void Motor::ReadRPM()
 
 void updateAllRPM() // ฟังก์ชันที่จะเอาไปผูกกับ IntervalTimer
 {
-    MotorA.ReadRPM();
+    MotorFL.ReadRPM();
+    MotorFR.ReadRPM();
     MotorB.ReadRPM();
-    MotorC.ReadRPM();
-    MotorD.ReadRPM();
 }
