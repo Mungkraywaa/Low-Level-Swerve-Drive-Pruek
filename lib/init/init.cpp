@@ -1,6 +1,4 @@
-#include "motor.h"
 #include "robot.h"
-#include "init.h"
 
 IntervalTimer encoderTimer;
 

@@ -1,5 +1,5 @@
-#include "motor.h"
 #include "robot.h"
+
 // สร้าง Object ของมอเตอร์ทั้ง 4 ตัว
 Motor MotorA, MotorB, MotorC, MotorD;
 
@@ -46,9 +46,17 @@ void Motor::drive(int16_t speed)
 
 void Motor::ISREncoder()
 {
+    /////////////////////////////////////////////////////////////
     uint32_t CurrentTime = micros();
-    DeltaTime = CurrentTime - PrevTime;
+    uint32_t dt = CurrentTime - PrevTime;
+
+    if (dt < 30)
+        return;
+
+    DeltaTime = dt;
     PrevTime = CurrentTime;
+    /////////////////////////////////////////////////////////////
+
     if (digitalReadFast(EncoderIN_B) == LOW)
     {
         MotorDirection = 1; // Direction +
@@ -84,6 +92,7 @@ void Motor::ReadRPM()
         MotorDirection = 0;
     }
 }
+
 void updateAllRPM() // ฟังก์ชันที่จะเอาไปผูกกับ IntervalTimer
 {
     MotorA.ReadRPM();

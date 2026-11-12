@@ -1,7 +1,4 @@
-#include <Arduino.h>
 #include "robot.h"
-#include "motor.h"
-#include "init.h"
 
 void setup()
 {
