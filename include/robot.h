@@ -1,5 +1,8 @@
 #pragma once
 
+// ตัวแปร global variable
+extern float RobotYaw;
+
 // ==========================================
 // 1. System & Arduino Core Headers
 // ==========================================
@@ -11,3 +14,4 @@
 #include "motor.h"
 #include "init.h"
 #include "move.h"
+#include "imu.h"

@@ -40,13 +40,13 @@ private:
         }
     };
 
-    // สร้างตัวแปรทั้ง 3 ล้อ พร้อมส่งค่า #define ของแต่ละล้อเข้าไปคำนวณ
-    Swerve WheelFL{Angle_Front_Left, Offset_Angle_Front_Left, ROBOT_RADIUS};  // ล้อหน้าซ้าย (Front Left)
+    Swerve WheelFL{Angle_Front_Left, Offset_Angle_Front_Left, ROBOT_RADIUS};   // ล้อหน้าซ้าย (Front Left)
     Swerve WheelFR{Angle_Front_Right, Offset_Angle_Front_Right, ROBOT_RADIUS}; // ล้อหน้าขวา (Front Right)
-    Swerve WheelB{Angle_Back, Offset_Angle_Back, ROBOT_RADIUS};               // ล้อหลัง (Back)
+    Swerve WheelB{Angle_Back, Offset_Angle_Back, ROBOT_RADIUS};                // ล้อหลัง (Back)
 
 public:
     void KinematicsCompute(float vx = 0.0f, float vy = 0.0f, float omega = 0.0f);
+    void debug();
 };
 
 extern move RobotMove;
