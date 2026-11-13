@@ -17,12 +17,16 @@ void move::KinematicsCompute(float vx, float vy, float omega)
 {
     float yaw = 0.0f; // TODO: ดึงค่า Yaw (องศา) จาก IMU ในอนาคต
 
+
+    //คำนวน Vx Vy FL wheel
     float vx_FL = vx - (omega * WheelFL.trackwidth_m);
     float vy_FL = vy + (omega * WheelFL.wheelbase_m);
 
+    //คำนวน Vx Vy FR wheel
     float vx_FR = vx - (omega * WheelFR.trackwidth_m);
     float vy_FR = vy + (omega * WheelFR.wheelbase_m);
 
+    //คำนวน Vx Vy B wheel
     float vx_B = vx - (omega * WheelB.trackwidth_m);
     float vy_B = vy + (omega * WheelB.wheelbase_m);
 
