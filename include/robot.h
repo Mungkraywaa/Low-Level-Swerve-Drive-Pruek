@@ -15,3 +15,4 @@ extern float RobotYaw;
 #include "init.h"
 #include "move.h"
 #include "imu.h"
+#include "headingcontrol.h"

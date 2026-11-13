@@ -14,7 +14,7 @@
 // รัศมีจากจุดศูนย์กลางหุ่นยนต์ถึงล้อ (หน่วย: เมตร)
 #define ROBOT_RADIUS 0.0f
 
-class move
+class robotmove
 {
 private:
     struct Swerve // แม่พิมพ์ตัวแปร Kinematics สำหรับล้อ 1 ล้อ
@@ -46,7 +46,8 @@ private:
 
 public:
     void KinematicsCompute(float vx = 0.0f, float vy = 0.0f, float omega = 0.0f);
+    void move(); // 
     void debug();
 };
 
-extern move RobotMove;
+extern robotmove RobotMove;

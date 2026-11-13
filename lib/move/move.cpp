@@ -1,17 +1,17 @@
 #include "robot.h"
 
 // สร้าง Object สำหรับเรียกใช้งานจากไฟล์อื่น
-move RobotMove;
+robotmove RobotMove;
 
 
-void move::debug()
+void robotmove::debug()
 {
     static uint32_t Prevtime;
     if (millis() - Prevtime >= 50)
     {
         }
 }
-void move::KinematicsCompute(float vx, float vy, float omega)
+void robotmove::KinematicsCompute(float vx, float vy, float omega)
 {
     // คำนวน Vx Vy FL wheel
     float vx_FL = vx - (omega * WheelFL.trackwidth_m);
