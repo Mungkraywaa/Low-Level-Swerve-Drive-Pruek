@@ -29,7 +29,6 @@ IntervalTimer encoderTimer;
 // PPR Motor
 #define PPR 370
 
-
 void PinModeMotor()
 {
     // Settings analogWrite Resolution To 10 Bit
