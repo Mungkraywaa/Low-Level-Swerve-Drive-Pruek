@@ -17,3 +17,4 @@ extern float RobotYaw;
 #include "imu.h"
 #include "headingcontrol.h"
 #include "canmotor.h"
+#include "arm.h"

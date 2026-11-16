@@ -83,6 +83,7 @@ void updateC620Feedback(float gear_ratio)
         fb.rotor_rpm           = (int16_t)((rx.buf[2] << 8) | rx.buf[3]);
         fb.torque_current      = (int16_t)((rx.buf[4] << 8) | rx.buf[5]);
         fb.temperature         = rx.buf[6];
+        fb.last_rx_ms          = millis();
 
         // ตั้งค่ามุมเริ่มต้นในเฟรมแรกที่ได้รับ เพื่อใช้เป็นจุดอ้างอิง 0 องศา
         if (!fb.initialized)
@@ -106,12 +107,30 @@ void updateC620Feedback(float gear_ratio)
             fb.raw_angle      = new_raw_angle;
         }
 
-        // คำนวณมุมสะสมและ RPM
-        fb.total_ecd   = (fb.round_cnt * 8192) + (int32_t)fb.raw_angle - (int32_t)fb.offset_angle;
-        fb.rotor_angle = fb.raw_angle * (360.0f / 8192.0f);
-        fb.shaft_angle = (fb.total_ecd * (360.0f / 8192.0f)) / gear_ratio;
-        fb.shaft_rpm   = fb.rotor_rpm / gear_ratio;
+        // คำนวณมุมสะสมและจำกัดขอบเขตมุมให้อยู่ในช่วง -180 ถึง +180 องศาเสมอ (O(1) ด้วย fmodf)
+        fb.total_ecd         = (fb.round_cnt * 8192) + (int32_t)fb.raw_angle - (int32_t)fb.offset_angle;
+        fb.total_shaft_angle = (fb.total_ecd * (360.0f / 8192.0f)) / gear_ratio;
+
+        float raw_rotor_deg = fb.raw_angle * (360.0f / 8192.0f);
+        fb.rotor_angle      = wrapAngle180(raw_rotor_deg);
+
+        float wrapped_shaft = fmodf(fb.total_shaft_angle + 180.0f, 360.0f);
+        if (wrapped_shaft < 0.0f)
+            wrapped_shaft += 360.0f;
+        fb.shaft_angle = wrapped_shaft - 180.0f;
+
+        fb.shaft_rpm = fb.rotor_rpm / gear_ratio;
     }
+}
+
+bool isC620Online(uint8_t id, uint32_t timeout_ms)
+{
+    if (id < 1 || id > 8)
+        return false;
+    const C620Feedback_t &fb = c620_fb[id - 1];
+    if (!fb.initialized)
+        return false;
+    return (millis() - fb.last_rx_ms) <= timeout_ms;
 }
 
 int16_t getC620RotorRPM(uint8_t id)
@@ -161,10 +180,11 @@ void resetC620Angle(uint8_t id)
     if (id < 1 || id > 8)
         return;
     C620Feedback_t &fb = c620_fb[id - 1];
-    fb.offset_angle = fb.raw_angle;
-    fb.round_cnt    = 0;
-    fb.total_ecd    = 0;
-    fb.shaft_angle  = 0.0f;
+    fb.offset_angle      = fb.raw_angle;
+    fb.round_cnt         = 0;
+    fb.total_ecd         = 0;
+    fb.shaft_angle       = 0.0f;
+    fb.total_shaft_angle = 0.0f;
 }
 
 const C620Feedback_t &getC620Feedback(uint8_t id)

@@ -16,11 +16,13 @@ struct C620Feedback_t
 
     int16_t  rotor_rpm = 0;       // ความเร็วรอบโรเตอร์ (RPM)
     float    shaft_rpm = 0.0f;    // ความเร็วรอบเพลาออกหลังผ่านเกียร์ (RPM)
-    float    rotor_angle = 0.0f;  // มุมโรเตอร์รอบเดียว (0.0 .. 360.0 deg)
-    float    shaft_angle = 0.0f;  // มุมเพลาออกสะสมหลังผ่านเกียร์ (deg)
+    float    rotor_angle = 0.0f;  // มุมโรเตอร์ (-180.0 .. +180.0 deg)
+    float    shaft_angle = 0.0f;  // มุมเพลาออกหลังผ่านเกียร์ (-180.0 .. +180.0 deg)
+    float    total_shaft_angle = 0.0f; // มุมเพลาออกสะสมต่อเนื่องหลายรอบ (deg)
 
     int16_t  torque_current = 0;  // กระแสจริง (-16384 .. 16384 = -20A .. +20A)
     uint8_t  temperature = 0;     // อุณหภูมิไดรฟ์ (°C)
+    uint32_t last_rx_ms = 0;      // เวลาล่าสุดที่ได้รับเฟรม CAN จากไดรฟ์ตัวนี้ (millis)
     bool     initialized = false; // รับเฟรมแรกเพื่อตั้งค่า offset_angle แล้วหรือยัง
 };
 
@@ -31,6 +33,7 @@ void setC620Current(uint8_t id, int16_t current);
 void updateC620Feedback(float gear_ratio = C620_DEFAULT_GEAR_RATIO);
 
 // ฟังก์ชันดึงค่า RPM, Angle และข้อมูล Feedback ตามหมายเลข ID (1 - 8)
+bool    isC620Online(uint8_t id, uint32_t timeout_ms = 50);
 int16_t getC620RotorRPM(uint8_t id);
 float   getC620ShaftRPM(uint8_t id);
 float   getC620RotorAngle(uint8_t id);
