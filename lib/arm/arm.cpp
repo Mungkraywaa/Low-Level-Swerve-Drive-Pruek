@@ -66,7 +66,7 @@ int16_t arm::SpeedControl()
 
             error = setpoint - getC620RotorRPM(motor_id);
 
-            // ถ้าสั่งหยุด (setpoint == 0) หรือมอเตอร์ถูกสั่งหมุนแต่ล็อกตายไม่ขยับเลย (RPM == 0 และกระแสอิ่มตัว) ไม่ให้สะสม I เพิ่ม
+            // ถ้าสั่งหยุด (setpoint == 0) ไม่ให้สะสม I เพิ่ม
             if (fabsf(setpoint) < 1.0f)
             {
                 sumerror = 0.0f;
