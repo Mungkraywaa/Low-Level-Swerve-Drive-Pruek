@@ -20,8 +20,9 @@ void setup()
     Arm1.setID(2);
     Arm2.setID(3);
 
-    Arm1.setPID(5.0f,0.1f,0.0f);
-    Arm2.setPID(5.0f,0.1f,0.0f);
+    Arm1.setPID(3.0f, 0.8f, 0.0f);
+    Arm2.setPID(3.0f, 0.8f, 0.0f);
+    Arm2.setPositionPID(20.0f, 0.3f, 80.0f);
 
     // Arm2.setPosition(0.0f, 3000.0f, 0.5f);
 
@@ -31,7 +32,53 @@ void setup()
     // }
 }
 
+float setpoint = 0.0f;
+
+void readSerialSetpoint()
+{
+    static char buf[32];
+    static uint8_t idx = 0;
+    static elapsedMillis lastCharTime;
+
+    while (Serial.available())
+    {
+        char c = (char)Serial.read();
+        lastCharTime = 0;
+
+        if (c == '\n' || c == '\r')
+        {
+            if (idx > 0)
+            {
+                buf[idx] = '\0';
+                setpoint = strtof(buf, nullptr);
+                idx = 0;
+            }
+        }
+        else if (idx < sizeof(buf) - 1)
+        {
+            buf[idx++] = c;
+        }
+    }
+
+    // กรณีไม่ได้ตั้งส่ง \n หรือ \r (No line ending): ถ้ารับตัวอักษรครบแล้วนิ่งเกิน 30 ms ให้อัปเดต setpoint ทันที
+    if (idx > 0 && lastCharTime >= 30)
+    {
+        buf[idx] = '\0';
+        setpoint = strtof(buf, nullptr);
+        idx = 0;
+    }
+}
+
 void loop()
+{
+    readSerialSetpoint();
+    updateC620Feedback();
+    Arm2.setPosition(setpoint);
+    Arm2.PositionControl();
+    Arm2.debug();
+}
+
+void armJoy()
 {
     // 1. อ่านค่าจอย PS4 และค่า Feedback จาก C620 ทุกๆ รอบ loop
     joy.update();
@@ -77,7 +124,7 @@ void loop()
         Serial.println(digitalRead(LimitArm1));
         Serial.print(">LimitArm2: ");
         Serial.println(digitalRead(LimitArm2));
-        }
+    }
 
     // 3. คำนวณ PID (ทุก 10 ms) และส่งคำสั่ง CAN (ทุก 1 ms) ต้องอยู่นอก if (timmers >= 10)
     Arm1.SpeedControl();

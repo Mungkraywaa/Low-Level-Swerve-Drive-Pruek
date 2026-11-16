@@ -50,39 +50,24 @@ int16_t arm::SpeedControl()
     // 1. คำนวณ Speed PID ทุกๆ 10 ms (100 Hz)
     if (lockloop >= 10)
     {
-        // ถ้าไดรฟ์ C620 ไม่มีไฟเลี้ยง / ขาดการติดต่อทาง CAN เกิน 50 ms หรือไม่ได้เรียกใช้นานเกิน 100 ms
-        // ให้ล้างค่าสะสม sumerror ทันที เพื่อไม่ให้กระชากตอนสับสวิตช์จ่ายไฟเข้าบอร์ด
-        if (!isC620Online(motor_id) || lockloop > 100)
+        // ถ้าไม่ได้เรียกใช้นานเกิน 100 ms ให้รีเซ็ตค่าสะสมก่อนหน้า
+        if (lockloop > 100)
         {
             sumerror = 0.0f;
-            error = 0.0f;
-            preverror = 0.0f;
-            pid_output = 0;
-            lockloop = 0;
+            preverror = setpoint - getC620RotorRPM(motor_id);
         }
-        else
-        {
-            lockloop = 0;
+        lockloop = 0;
 
-            error = setpoint - getC620RotorRPM(motor_id);
+        error = setpoint - getC620RotorRPM(motor_id);
 
-            // ถ้าสั่งหยุด (setpoint == 0) ไม่ให้สะสม I เพิ่ม
-            if (fabsf(setpoint) < 1.0f)
-            {
-                sumerror = 0.0f;
-            }
-            else
-            {
-                sumerror += error;
-                sumerror = constrain(sumerror, -5000.0f, 5000.0f); // กัน Integral Windup
-            }
+        sumerror += error;
+        sumerror = constrain(sumerror, -5000.0f, 5000.0f); // กัน Integral Windup
 
-            float out = (Kp * error) + (Ki * sumerror) + (Kd * (error - preverror));
-            preverror = error;
+        float out = (Kp * error) + (Ki * sumerror) + (Kd * (error - preverror));
+        preverror = error;
 
-            // จำกัดกระแสสูงสุดไว้ที่ ±max_current
-            pid_output = (int16_t)constrain(out, -max_current, max_current);
-        }
+        // จำกัดกระแสสูงสุดไว้ที่ ±max_current
+        pid_output = (int16_t)constrain(out, -max_current, max_current);
     }
 
     // 2. ส่งคำสั่งกระแสจาก PID ให้ C620 ทุกๆ 1 ms (1000 us = 1 kHz)
@@ -100,48 +85,41 @@ int16_t arm::PositionControl()
     // 1. คำนวณ Position PID ทุกๆ 10 ms (100 Hz)
     if (lockloop >= 10)
     {
-        // ถ้าไดรฟ์ C620 ไม่มีไฟเลี้ยง / ขาดการติดต่อทาง CAN เกิน 50 ms หรือไม่ได้เรียกใช้นานเกิน 100 ms
-        // ให้ล้างค่าสะสม sumerror และ pid_output ทันที เพื่อป้องกันมอเตอร์กระชากตอนเปิดไฟเข้าบอร์ด
-        if (!isC620Online(motor_id) || lockloop > 100)
+        // หาความคลาดเคลื่อนของมุมเพลาออก (-180 ถึง +180 องศา)
+        error = wrapAngle180(target_angle - getC620ShaftAngle(motor_id));
+
+        // ถ้าไม่ได้เรียกใช้นานเกิน 100 ms ให้รีเซ็ตค่าสะสมก่อนหน้า
+        if (lockloop > 100)
         {
             sumerror = 0.0f;
-            error = 0.0f;
-            preverror = 0.0f;
-            pid_output = 0;
-            lockloop = 0;
+            preverror = error;
+        }
+        lockloop = 0;
+
+        // สะสม I เฉพาะเมื่อ Error อยู่ในระยะ i_zone (< 15 องศา) เพื่อกัน Overshoot
+        if (fabsf(error) < i_zone)
+        {
+            sumerror += error;
+            sumerror = constrain(sumerror, -1000.0f, 1000.0f);
         }
         else
         {
-            lockloop = 0;
-
-            // หาความคลาดเคลื่อนของมุมเพลาออก (-180 ถึง +180 องศา)
-            error = wrapAngle180(target_angle - getC620ShaftAngle(motor_id));
-
-            // สะสม I เฉพาะเมื่อ Error อยู่ในระยะ i_zone (< 15 องศา) เพื่อกัน Overshoot
-            if (fabsf(error) < i_zone)
-            {
-                sumerror += error;
-                sumerror = constrain(sumerror, -1000.0f, 1000.0f);
-            }
-            else
-            {
-                sumerror = 0.0f;
-            }
-
-            float out = (pos_Kp * error) + (pos_Ki * sumerror) + (pos_Kd * (error - preverror));
-
-            // Deadband: ถ้าใกล้เป้าหมายมาก (< accept_error) ให้หยุดสั่งกระแสและล้าง I
-            if (fabsf(error) < accept_error)
-            {
-                sumerror = 0.0f;
-                out = 0.0f;
-            }
-
-            preverror = error;
-
-            // จำกัดกระแสสูงสุดไว้ที่ ±max_current
-            pid_output = (int16_t)constrain(out, -max_current, max_current);
+            sumerror = 0.0f;
         }
+
+        float out = (pos_Kp * error) + (pos_Ki * sumerror) + (pos_Kd * (error - preverror));
+
+        // Deadband: ถ้าใกล้เป้าหมายมาก (< accept_error) ให้หยุดสั่งกระแสและล้าง I
+        if (fabsf(error) < accept_error)
+        {
+            sumerror = 0.0f;
+            out = 0.0f;
+        }
+
+        preverror = error;
+
+        // จำกัดกระแสสูงสุดไว้ที่ ±max_current
+        pid_output = (int16_t)constrain(out, -max_current, max_current);
     }
 
     // 2. ส่งคำสั่งกระแสจาก PID ให้ C620 ทุกๆ 1 ms (1000 us = 1 kHz)
