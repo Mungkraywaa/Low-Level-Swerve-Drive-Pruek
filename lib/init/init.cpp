@@ -1,7 +1,5 @@
 #include "robot.h"
 
-IntervalTimer encoderTimer;
-
 ///////////////////////// Pin Motor FL (Front Left)
 #define MOTOR_FL_DIR_1 2
 #define MOTOR_FL_DIR_2 1
@@ -34,19 +32,14 @@ void PinModeMotor()
     // Settings analogWrite Resolution To 10 Bit
     analogWriteResolution(10);
 
-    // SetPin & PinMode
-    MotorFL.setPin(MOTOR_FL_DIR_1, MOTOR_FL_DIR_2, MOTOR_FL_PWM, ENCODER_FL_IN_A, ENCODER_FL_IN_B, PPR);
-    MotorFR.setPin(MOTOR_FR_DIR_1, MOTOR_FR_DIR_2, MOTOR_FR_PWM, ENCODER_FR_IN_A, ENCODER_FR_IN_B, PPR);
-    MotorB.setPin(MOTOR_B_DIR_1, MOTOR_B_DIR_2, MOTOR_B_PWM, ENCODER_B_IN_A, ENCODER_B_IN_B, PPR);
-    
-    // Attach Interrupt สำหรับอ่าน Encoder
-    attachInterrupt(digitalPinToInterrupt(ENCODER_FL_IN_A), []()
-                    { MotorFL.ISREncoder(); }, RISING);
-    attachInterrupt(digitalPinToInterrupt(ENCODER_FR_IN_A), []()
-                    { MotorFR.ISREncoder(); }, RISING);
-    attachInterrupt(digitalPinToInterrupt(ENCODER_B_IN_A), []()
-                    { MotorB.ISREncoder(); }, RISING);
+    // 1. ตั้งค่าขาขับมอเตอร์ (Motor Driver)
+    MotorFL.setPin(MOTOR_FL_DIR_1, MOTOR_FL_DIR_2, MOTOR_FL_PWM);
+    MotorFR.setPin(MOTOR_FR_DIR_1, MOTOR_FR_DIR_2, MOTOR_FR_PWM);
+    MotorB.setPin(MOTOR_B_DIR_1, MOTOR_B_DIR_2, MOTOR_B_PWM);
 
-    // ตั้งเวลาอ่านค่า RPM ทุกๆ 1000 us (1 ms)
-    encoderTimer.begin(updateAllRPM, 1000);
+    // 2. กำหนดค่าและลงทะเบียน Encoder แบบ Dynamic (ผูก Interrupt + เริ่ม Timer 1 ms ให้อัตโนมัติ)
+    // รูปแบบ: .init(pinA, pinB, ppr, maxCounter, minPulseUs, invertDirection)
+    EncoderFL.init(ENCODER_FL_IN_A, ENCODER_FL_IN_B, PPR, 30, 30, false);
+    EncoderFR.init(ENCODER_FR_IN_A, ENCODER_FR_IN_B, PPR, 30, 30, false);
+    EncoderB.init(ENCODER_B_IN_A, ENCODER_B_IN_B, PPR, 30, 30, false);
 }

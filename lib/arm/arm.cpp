@@ -100,7 +100,7 @@ int16_t arm::PositionControl()
         if (fabsf(error) < i_zone)
         {
             sumerror += error;
-            sumerror = constrain(sumerror, -1000.0f, 1000.0f);
+            sumerror = constrain(sumerror, -max_current, max_current);
         }
         else
         {

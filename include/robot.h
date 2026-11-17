@@ -12,11 +12,12 @@ extern float RobotYaw;
 // 2. Project Module Headers
 // ==========================================
 #include "pin.h"
+#include "encoder.h"
 #include "motor.h"
 #include "init.h"
 #include "move.h"
 #include "imu.h"
 #include "headingcontrol.h"
-#include "canmotor.h"
+#include "canDJI.h"
 #include "arm.h"
 #include "joy.h"
