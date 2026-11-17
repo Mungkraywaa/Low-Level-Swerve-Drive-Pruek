@@ -2,11 +2,11 @@
 elapsedMillis timmers;
 
 MotorEncoder Enc1, Enc2;
-
 #define LimitArm1 8
 #define LimitArm2 5
 
 float setpoint = 0.0f;
+float Distance = 0.0f;
 
 void armJoy();
 void setup()
@@ -29,8 +29,10 @@ void setup()
 
     Arm1.setPID(3.0f, 0.8f, 0.0f);
     Arm2.setPID(3.0f, 0.8f, 0.0f);
+    Arm1.setPositionPID(17.0f, 0.3f, 80.0f);
     Arm2.setPositionPID(17.0f, 0.3f, 80.0f);
 
+    //set pos | degree | max current | expected error
     // Arm2.setPosition(0.0f, 3000.0f, 0.5f);
 
     // if (!initIMU())
@@ -91,6 +93,12 @@ void armJoy()
 {
     static float pos1 = 0.0f;
     static float pos2 = 0.0f;
+    const float L1 = 40.0f;
+    const float L2 = 36.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    static float target_degree_L1 = 0.0f;
+    static float target_degree_L2 = 0.0f;
 
     // 1. อ่านค่าจอย PS4 และค่า Feedback จาก C620 ทุกๆ รอบ loop
     joy.update();
@@ -115,7 +123,7 @@ void armJoy()
         float step2 = (joy._Ry / 127.0f) * 1.5f;
 
         if (digitalRead(LimitArm1) == 0 && step1 < 0.0f)
-        {
+        {   
             step1 = 0.0f;
         }
 
@@ -124,11 +132,20 @@ void armJoy()
             step2 = 0.0f;
         }
 
-        pos1 = constrain(pos1 + step1, -180.0f, 180.0f);
-        pos2 = constrain(pos2 + step2, -180.0f, 180.0f);
+        // pos1 = constrain(pos1 + step1, -180.0f, 180.0f);
+        // pos2 = constrain(pos2 + step2, -180.0f, 180.0f);
 
-        Arm1.setPosition(pos1, 12000.0f, 0.5f);
-        Arm2.setPosition(pos2, 12000.0f, 0.5f);
+        target_degree_L1 = constrain(target_degree_L1 + step1, -180.0f, 180.0f);
+        target_degree_L2 = constrain(target_degree_L2 + step2, -180.0f, 180.0f);
+
+        float T1_rad = target_degree_L1 * DEG_TO_RAD;
+        float T2_rad = (target_degree_L2 - target_degree_L1) * DEG_TO_RAD;
+        y = L1 * cosf(T1_rad) + L2 * cosf(T1_rad + T2_rad);
+        z = L1 * sinf(T1_rad) + L2 * sinf(T1_rad + T2_rad);
+        Distance = sqrtf((y*y) + (z*z));
+
+        Arm1.setPosition(target_degree_L1, 12000.0f, 0.5f);
+        Arm2.setPosition(target_degree_L2, 12000.0f, 0.5f);
     }
 
     // 3. คำนวณ Position PID (ทุก 10 ms) และส่งคำสั่ง CAN (ทุก 1 ms)
